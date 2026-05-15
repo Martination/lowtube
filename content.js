@@ -25,19 +25,45 @@ function parseViewCount(viewCountText) {
   return views;
 }
 
+function getViewsText(item) {
+  // Standard metadata
+  const viewCountText = [...item.querySelectorAll("yt-content-metadata-view-model span")]
+    .find(el => /views?/i.test(el.textContent));
+
+  if (viewCountText) {
+    return viewCountText.textContent.trim();
+  }
+
+  // End screen
+  const videowallSpan = item.querySelector(
+    ".ytp-modern-videowall-still-view-count-and-date-info"
+  );
+
+  if (videowallSpan) {
+    return videowallSpan.textContent.trim();
+  }
+
+  return "";
+}
+
 function filterVideos() {
-  const videoItems = document.querySelectorAll('yt-lockup-view-model, ytd-video-renderer, ytd-rich-item-renderer');
+  const videoItems = document.querySelectorAll(`
+    yt-lockup-view-model,
+    ytd-video-renderer,
+    ytd-rich-item-renderer,
+    a.ytp-modern-videowall-still
+  `);
 
   videoItems.forEach(item => {
     if (item.dataset.viewsProcessed) return;
     item.dataset.viewsProcessed = "true";
 
-    const viewCountText = [...item.querySelectorAll("yt-content-metadata-view-model span")]
-      .find(el => /views?/i.test(el.textContent))?.textContent || "";
+    const viewCountText = getViewsText(item);
+    if (!viewCountText) return;
 
     const viewCount = parseViewCount(viewCountText);
     if (viewCount < minViews) {
-      item.style.display = 'none';
+      item.remove();
     }
   });
 }
